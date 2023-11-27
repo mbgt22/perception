@@ -1,0 +1,3 @@
+"0","d2 <- cbind(d,enfant)"
+"0",""
+"0","res.PCA2 <- PCA(d2, quali.sup=c(6:14),scale.unit=FALSE )"

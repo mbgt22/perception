@@ -1,0 +1,167 @@
+---
+title: "Eval Perception"
+author: "Mathilde Bruguet"
+date: "2023-11-22"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Tri hierarchique 
+
+
+```{r}
+library(data.table)
+library(FactoMineR)
+library(tidyverse)
+library(SensoMineR)
+```
+
+Etape préliminaire  à l'AFM pour renseigner l'argument group . On créé le vecteur groupe qui renseigne le nombre de hierarchies par enfant. 
+On récupère une chaine de charactère des noms des colonnes et on sépare En°enfant de Hn°hierarchie. 
+
+Ce qui correspond au nlevels de la vraibale X1 de la table e. 
+
+
+
+
+```{r}
+trih <- fread("trih.txt")
+rnames <- trih[,1]
+trih <- trih[,2:430]
+
+e <- strsplit(names(trih),".")
+e <-data.frame(t(data.frame(strsplit(names(trih),"-"))))
+
+e$X1 <- as.factor(e$X1)
+nlevels(e$X1)
+
+groupe = as.vector(summary(e[,1],175))
+
+
+trih <- data.frame(trih)
+trih <-trih[,sort(names(trih))]
+
+for (i in 1:dim(trih)[2]) trih[,i] <- as.factor(trih[,i])
+summary(trih)
+
+v <- c()
+for (i in 1: dim(trih)[2]) v <-append(v, nlevels(trih[,i]))## On vérifie qu'on a pas des données de tri  hierachiques
+plot(v) ## On a pas de variables sans variabilité. 
+```
+
+On réalise l'AFM en précisant les groupes qui correspondent aunombre de hirerachies réalisé par chaque enfant. On cherche les coordonnées d'un enfant "extrême" qui a des coordonnées élevées sur la première dimension. On choisit l'enfant E80. 
+Ensuite, on concatène les coordonnées des individus sur les 5 prrmières dimensions aux données du design expérimental dans la table d . 
+Ensuite on réalise une ACP sur d avec l'argument scale.unit = FALSE, afin de prendre en compte les coordonées des individus sur chaque dimensions et on projette en suplémentaires les variables qualitatives correspondant au design expérimentale pour comprendre comment les individus on réalisé leurs hierarchies. 
+Grâce aux éléments supplémentaire on peut interprété les 2 premières dimensions de l'ACP: 
+- dim 1 : rond/carré 
+- dim 2 : grand/petit 
+Si un enfant à des grandes coordonnées en dimension 1 ça veut dire qu'il a séparé en premier les ronds des carrés. 
+
+```{r}
+res.MFA<-MFA(trih,
+             group = groupe,
+             type = rep("n",nlevels(e$X1)))
+
+            
+res.MFA$groupe$coord ## recherche d'un enfant extrême
+enfant <- trih[,c("E80.H1","E80.H2")]# Partie correspondants au données récolté pour l'enfant E80
+
+## Contribution  et design 
+
+design <- readxl::read_excel("Design.xls") ## Données du design expérimentale
+
+d <- cbind(res.MFA$ind$coord,design) # concaténation de toutes les coordonnées
+#des individus sur les 5 ères dimensions avec des données design 
+
+rownames(d) <- d[,6] # On définit le nom des lignes par les stimulis 
+d <- d[,-6]## On enlève la colonne des stimulis
+
+
+res.PCA <- PCA(d,quali.sup = c(6:12),scale.unit =FALSE)
+```
+
+
+On recréer une table où on ajoute les données de tri hierarchique de l'enfant, à la table contennant les coordonnées des individus de la 1er AFM et les données du design expérimental. (d2)
+
+On fait une ACP où cette fois on ajoute en variable supplémentaire en plus du design les données de tri de l'enfant E80 et on regarde de quel design il est proche. Afin de voir quel "choix" l'enfant à réalisé lors de son tri.Une autre solution , existe avec catdes, on peut déterminer la clé de spération mais pour une seule hierachie
+```{r}
+d2 <- cbind(d,enfant)
+
+res.PCA2 <- PCA(d2, quali.sup=c(6:14),scale.unit=FALSE )
+
+## Autre solution 
+design_e1=cbind(design,trih[,"E80.H1"])
+catdes(design_e1, num.var=8) ## Donne la clé de séparation à sa première hierachie
+```
+
+On cherche à représenter les étapes du raisonnement cognitid de l'enfant lors de son tri. Pour celà on réalise un AFM, avec en élément supplémentaire , les hierachies de l'enfant E80 "H1" et "H2" et les designs. 
+
+On créer table en duppliquant les coordonnées des individus , le tri de l'enfant 80 et les varaibles de design. Pour réaliser une AFM et visualiser dans le carrées des liaisons la hierachie 1 et 2 de l'enfant 80. 
+
+```{r}
+### Coordonnée des groupes
+new.table <- cbind(res.MFA$ind$coord,res.MFA$ind$coord,enfant,design[,-1])
+rownames(new.table) <- new.table[,13]
+new.table <- new.table[,-13]
+
+rownames(new.table) <- design[,1]
+
+groupe2 = c(5,5, rep(1,9))
+type2 = c("c","c", rep("n",9))
+
+name_groupe <-c("GR1","GR2","H1","H2", names(design))
+name_groupe <- name_groupe[-5]
+
+res.MFA.E1 <- MFA(new.table, ncp = 5,
+                  type = type2, group = groupe2 ,
+                  num.group.sup = c(3:11), name.group= name_groupe)
+
+d_e <- cbind(design[,-6],enfant]
+catdes(d_e,num.var=8) # permet de caractériser les liens
+
+# Différence entre % inertie entre Mathis et nous car il a pas pris les même 
+# dimension ( moi 5 et lui 2)
+
+
+## Il ne reste qu'à faire la liaison entre les H1 et H2
+```
+Il y a orthonogalité des effets , le plan d'expérience propre car on a pas de confusion entre les  design . 
+On voit que H1  à des coordonénes nulles sur dim1 et dim2 , car la clé de spéartion de H1 est le contoru de forme alors que la dim1 et 2 sont carrectérisé par la forme et la taille. Au contraire H2 à des coordonénes 1:1 sur le carré des laisions car le tri réalisé est fait suivant le forme et la couleur à la fois. 
+```{r}
+## Maintenant on récupère le descriptif de la tâche de tri et on va regarder parmis les varibales ce 
+ # qui caracétrise vraiement la tâche de tri et ce qui caractérise les enfant 
+
+
+descript <- readxl::read_excel("Descriptive.xls", ) 
+
+descript$Ind <- as.factor(descript$Ind)
+descript$Jour <- as.factor(descript$Jour)
+descript$Prénom <- as.factor(descript$Prénom)
+descript$Symétrique <- as.factor(descript$Symétrique)
+descript$classetemps <- as.factor(descript$classetemps)
+
+descript$Age <- as.factor(descript$Age)
+descript$Sexe <- as.factor(descript$Sexe)
+descript$Juge <- as.factor(descript$Juge)
+descript$Lunettes <- as.factor(descript$Lunettes)
+descript$DroitierGaucher <- as.factor(descript$DroitierGaucher)
+
+res.des<- PCA(descript[,1:16], quali.sup = c(1:3,8,10:16))
+res.des<- PCA(descript[,c(4:7,9,11)], quali.sup = c(6))
+
+plot.PCA(res.des, habillage = 6, graph.type = "classic", invisible = "quali", label="none")
+plotellipses(res.des,label ="none")
+
+```
+On observe un gradient au niveau des ellipses , on voit que la variabilité des tri diminue plus l'âge des enfants augmentent. 
+
+
+## JAR - Orange
+
+
+

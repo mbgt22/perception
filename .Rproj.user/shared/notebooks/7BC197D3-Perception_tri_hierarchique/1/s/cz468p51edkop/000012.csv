@@ -1,0 +1,27 @@
+"0",""
+"0","## Autre solution "
+"0","design_e1=cbind(design,trih[,""E80.H1""])"
+"0","catdes(design_e1, num.var=8) ## Donne la clé de séparation à sa première hierachie"
+"2","Avis : L’approximation du Chi-2 est peut-être incorrecte"
+"2","Avis : L’approximation du Chi-2 est peut-être incorrecte"
+"2","Avis : L’approximation du Chi-2 est peut-être incorrecte"
+"2","Avis : L’approximation du Chi-2 est peut-être incorrecte"
+"2","Avis : L’approximation du Chi-2 est peut-être incorrecte"
+"2","Avis : L’approximation du Chi-2 est peut-être incorrecte"
+"2","Avis : L’approximation du Chi-2 est peut-être incorrecte"
+"2","Avis : L’approximation du Chi-2 est peut-être incorrecte"
+"1","
+Link between the cluster variable and the categorical variables (chi-square test)
+=================================================================================
+"
+"1","    "
+"1"," p.value"
+"1"," df"
+"1","
+"
+"1","
+Description of each cluster by the categories
+=============================================
+"
+"1","NULL
+"

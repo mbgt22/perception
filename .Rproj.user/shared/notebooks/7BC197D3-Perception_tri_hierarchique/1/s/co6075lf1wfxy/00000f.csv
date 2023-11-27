@@ -1,0 +1,7 @@
+"0","### Coordonnée des groupes"
+"0","new.table <- cbind(res.MFA$ind$coord,res.MFA$ind$coord,enfant,design[,-1])"
+"0","rownames(new.table) <- new.table[,13]"
+"2","Avis : non-unique values when setting 'row.names': ‘jaune’, ‘orange’"
+"2","Erreur dans `.rowNamesDF<-`(x, value = value) : 
+  les duplications dans 'row.names' ne sont pas autorisées
+"
